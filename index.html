@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ASN Duurzaam Aandelenfonds – Strategie</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--text:#17212b;--muted:#66717c;--line:#dfe4e8;--green:#147a43;--red:#b42318;--orange:#a15c00;--blue:#1459a6}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);font:15px/1.45 Arial,sans-serif;color:var(--text)}
+header{background:#173b2b;color:white;padding:22px calc(20px + (100vw - 1200px)/2)} main{max-width:1200px;margin:20px auto;padding:0 16px}
+h1{margin:0;font-size:24px} h2{margin:0 0 14px;font-size:18px}.sub{opacity:.82;margin-top:5px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;box-shadow:0 1px 2px #0000000a}
+.metric .label{font-size:12px;color:var(--muted);text-transform:uppercase}.metric .value{font-size:24px;font-weight:700;margin-top:5px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}.status{border-left:6px solid var(--blue);}.status.buy{border-color:var(--green)}.status.sell{border-color:var(--red)}.status.wait{border-color:var(--orange)}
+.status-title{font-size:24px;font-weight:700}.small{color:var(--muted);font-size:13px}
+table{width:100%;border-collapse:collapse}th,td{padding:9px 7px;border-bottom:1px solid var(--line);text-align:right}th:first-child,td:first-child{text-align:left}th{font-size:12px;color:var(--muted)}
+input{width:100%;padding:9px;border:1px solid #cbd2d8;border-radius:6px;font-size:15px}label{font-size:12px;color:var(--muted);display:block;margin:8px 0 4px}
+button{border:0;border-radius:7px;padding:10px 14px;cursor:pointer;font-weight:700;margin:4px 4px 0 0}button.primary{background:#173b2b;color:white}button.secondary{background:#e9eef1;color:#17212b}button.danger{background:#fee4e2;color:#8a1c13}
+.formgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.actions{margin-top:10px}
+.good{color:var(--green);font-weight:700}.bad{color:var(--red);font-weight:700}.warn{color:var(--orange);font-weight:700}
+.note{background:#f8fafb;border:1px solid var(--line);padding:12px;border-radius:7px;font-size:13px}
+details{margin:-4px 0 14px;font-size:13px;color:var(--muted)}summary{cursor:pointer}details .formgrid{max-width:520px;margin-top:6px;grid-template-columns:1fr 1fr}
+@media(max-width:800px){.grid,.two,.formgrid{grid-template-columns:1fr 1fr}}@media(max-width:520px){.grid,.two,.formgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><h1>ASN Duurzaam Aandelenfonds</h1><div class="sub">Persoonlijk strategie-dashboard · koers wordt automatisch bijgewerkt</div></header>
+<main>
+<section class="grid">
+  <div class="card metric"><div class="label">Laatste ASN-koers</div><div class="value" id="mPrice">—</div><div class="small" id="mPriceDate"></div></div>
+  <div class="card metric"><div class="label">Hoogste koers sinds laatste verkoop</div><div class="value" id="mHigh">—</div></div>
+  <div class="card metric"><div class="label">Volgende koop</div><div class="value" id="mBuy">—</div></div>
+  <div class="card metric"><div class="label">Volgende verkoop</div><div class="value" id="mSell">—</div></div>
+</section>
+<details><summary>Koers handmatig aanpassen</summary>
+  <div class="formgrid"><div><input id="price" type="number" step="0.01" min="0" placeholder="bijv. 225.87"></div><div><button class="secondary" onclick="updatePrice()">Bijwerken</button></div></div>
+</details>
+
+<section class="two">
+<div class="card status wait" id="statusCard">
+  <h2>Strategiestatus</h2>
+  <div class="status-title" id="statusTitle">Nog geen koers ingevoerd</div>
+  <p id="statusText" class="small"></p>
+</div>
+<div class="card">
+  <h2>Instellingen</h2>
+  <div class="formgrid" style="grid-template-columns:1fr 1fr">
+    <div><label>Koopdaling (%)</label><input id="buyPct" type="number" step="0.1" min="0" value="2" onchange="saveSettings()"></div>
+    <div><label>Verkoopstijging (%)</label><input id="sellPct" type="number" step="0.1" min="0" value="3" onchange="saveSettings()"></div>
+  </div>
+  <div class="actions"><button class="danger" onclick="resetAll()">Alles wissen</button></div>
+</div>
+</section>
+
+<section class="two" style="margin-top:14px">
+<div class="card">
+  <h2>Aankoop registreren</h2>
+  <div class="formgrid">
+    <div><label>Datum</label><input id="buyDate" type="date"></div>
+    <div><label>Koers</label><input id="buyPrice" type="number" step="0.01" min="0"></div>
+    <div><label>Aantal</label><input id="buyQty" type="number" step="1" min="1"></div>
+  </div>
+  <div class="actions"><button class="primary" onclick="addBuy()">Aankoop toevoegen</button></div>
+</div>
+<div class="card">
+  <h2>Verkoop registreren</h2>
+  <div class="formgrid">
+    <div><label>Datum</label><input id="sellDate" type="date"></div>
+    <div><label>Koers</label><input id="sellPrice" type="number" step="0.01" min="0"></div>
+    <div><label>Aantal</label><input id="sellQty" type="number" step="1" min="1"></div>
+  </div>
+  <div class="actions"><button class="primary" onclick="addSell()">Verkoop laatste aankoop (LIFO)</button></div>
+</div>
+</section>
+
+<section class="card" style="margin-top:14px">
+<h2>Open aankooptranches</h2>
+<table><thead><tr><th>Aankoop</th><th>Datum</th><th>Aantal</th><th>Aankoopkoers</th><th>Waarde</th><th>Verkoopniveau</th><th>Resultaat</th></tr></thead>
+<tbody id="positions"></tbody></table>
+</section>
+
+<section class="card" style="margin-top:14px">
+<h2>Transactielogboek</h2>
+<table><thead><tr><th>Datum</th><th>Actie</th><th>Koers</th><th>Aantal</th><th>Bedrag</th><th>Resultaat</th></tr></thead>
+<tbody id="log"></tbody></table>
+</section>
+
+<section class="card" style="margin-top:14px">
+<h2>Hoe de berekening werkt</h2>
+<div class="note">
+<b>Na een verkoop:</b> de koers van die verkoop wordt het nieuwe referentiepunt. Vanaf dat moment wordt de hoogste koers bijgehouden, ook over dagen waarop je de pagina niet opende.
+<br><br>
+<b>Zonder open aankoop:</b> eerste koopniveau = hoogste koers sinds de laatste verkoop × (1 − kooppercentage).
+<br><br>
+<b>Met open aankopen:</b> volgend koopniveau = koers van de laatste aankoop × (1 − kooppercentage).
+<br><br>
+<b>Verkoop:</b> de laatst aangekochte open tranche wordt verkocht zodra de koers het ingestelde verkooppercentage boven de aankoopkoers bereikt. Gedeeltelijke verkopen zijn mogelijk; het restant blijft als dezelfde tranche open.
+<br><br>
+De app voert zelf geen orders uit. Hij geeft alleen een signaal; jij registreert daarna de werkelijk uitgevoerde transactie. Koersbron: asnbank.nl/beleggen/koersen.html (dagkoers).
+</div>
+</section>
+</main>
+<script>
+const KEY='asn_strategy_v1';
+let s=JSON.parse(localStorage.getItem(KEY)||'null')||{
+  buyPct:2,sellPct:3,price:225.87,priceDate:'2026-10-02',high:225.87,lastSalePrice:null,positions:[],transactions:[]
+};
+if(!s.processedDate)s.processedDate=s.priceDate||'2026-10-02';
+function save(){localStorage.setItem(KEY,JSON.stringify(s));}
+function euro(x){return x==null?'—':new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(x)}
+function num(id){return parseFloat(document.getElementById(id).value)}
+function today(){return new Date().toISOString().slice(0,10)}
+document.getElementById('buyDate').value=today(); document.getElementById('sellDate').value=today();
+function calcBuy(){
+  if(s.high==null)return null;
+  return s.positions.length ? s.positions[s.positions.length-1].price*(1-s.buyPct/100) : s.high*(1-s.buyPct/100);
+}
+function calcSell(){
+  if(!s.positions.length)return null;
+  return s.positions[s.positions.length-1].price*(1+s.sellPct/100);
+}
+function saveSettings(){
+  const b=num('buyPct'),p=num('sellPct');
+  if(b>=0&&p>=0){s.buyPct=b;s.sellPct=p;save();render();}
+}
+async function loadAuto(){
+  try{
+    const r=await fetch('koers.json?'+Date.now(),{cache:'no-store'});
+    if(!r.ok)return;
+    const k=await r.json(),dates=Object.keys(k.history||{}).sort();
+    if(!dates.length)return;
+    // hoogste koers bijhouden over alle dagen na de laatst verwerkte datum
+    dates.forEach(d=>{if(d>s.processedDate&&(s.high==null||k.history[d]>s.high))s.high=k.history[d];});
+    const ld=dates[dates.length-1];
+    if(ld>s.processedDate){s.price=k.history[ld];s.priceDate=ld;s.processedDate=ld;s.source='automatisch';}
+    save();render();
+  }catch(e){/* offline of lokaal geopend: opgeslagen koers blijft staan */}
+}
+function updatePrice(){
+  let p=num('price'); if(!(p>0))return alert('Vul een geldige koers in.');
+  s.price=p;s.priceDate=today();s.source='handmatig';
+  if(s.high==null||p>s.high)s.high=p;
+  save();render();
+}
+function addBuy(){
+  let date=document.getElementById('buyDate').value||today(),price=num('buyPrice'),qty=num('buyQty');
+  if(!(price>0&&qty>0))return alert('Vul datum, koers en aantal in.');
+  s.positions.push({id:crypto.randomUUID(),date,price,qty});
+  s.transactions.push({date,type:'Koop',price,qty,amount:price*qty,result:null});
+  s.price=price; s.priceDate=date; s.source='transactie';
+  if(s.high==null)s.high=price;
+  save();render();
+}
+function addSell(){
+  if(!s.positions.length)return alert('Er zijn geen open aandelen om te verkopen.');
+  let date=document.getElementById('sellDate').value||today(),price=num('sellPrice'),qty=num('sellQty');
+  if(!(price>0&&qty>0))return alert('Vul datum, koers en aantal in.');
+  let pos=s.positions[s.positions.length-1];
+  if(qty>pos.qty) return alert('Je kunt maximaal '+pos.qty+' aandelen uit de laatste aankoop verkopen.');
+  let result=(price-pos.price)*qty;
+  s.transactions.push({date,type:'Verkoop',price,qty,amount:price*qty,result});
+  pos.qty-=qty;
+  if(pos.qty===0)s.positions.pop();
+  s.price=price; s.priceDate=date; s.source='transactie';
+  s.high=price; s.processedDate=date; // nieuw referentiepunt vanaf de verkoopdatum
+  s.lastSalePrice=price;
+  save();render();loadAuto();
+}
+function resetAll(){
+  if(!confirm('Alle lokale gegevens verwijderen?'))return;
+  localStorage.removeItem(KEY);location.reload();
+}
+function render(){
+  document.getElementById('mPrice').textContent=euro(s.price);
+  const age=s.priceDate?Math.floor((Date.now()-new Date(s.priceDate))/864e5):0, old=age>4;
+  const pd=document.getElementById('mPriceDate');
+  pd.textContent=s.priceDate?'Koersdatum '+s.priceDate.split('-').reverse().join('-')+(s.source?' · '+s.source:'')+(old?' · ⚠ verouderd':''):'';
+  pd.className='small'+(old?' warn':'');
+  document.getElementById('mHigh').textContent=euro(s.high);
+  document.getElementById('mBuy').textContent=euro(calcBuy());
+  document.getElementById('mSell').textContent=euro(calcSell());
+  document.getElementById('buyPct').value=s.buyPct;document.getElementById('sellPct').value=s.sellPct;
+  const card=document.getElementById('statusCard'),title=document.getElementById('statusTitle'),txt=document.getElementById('statusText');
+  card.className='card status wait';
+  if(s.price==null){title.textContent='Nog geen koers ingevoerd';txt.textContent='Voer de actuele koers in om de strategie te beoordelen.'}
+  else{
+    const buy=calcBuy(),sell=calcSell();
+    if(sell!=null && s.price>=sell){
+      card.className='card status sell';title.textContent='🔴 VERKOOPSIGNAAL';
+      txt.textContent=`De laatste aankoop van ${euro(s.positions[s.positions.length-1].price)} heeft het verkoopniveau ${euro(sell)} bereikt of overschreden.`;
+    }else if(buy!=null && s.price<=buy){
+      card.className='card status buy';title.textContent='🟢 KOOPSIGNAAL';
+      txt.textContent=`De koers is op of onder het koopniveau ${euro(buy)} gekomen.`;
+    }else{
+      title.textContent='🟡 GEEN ACTIE';
+      txt.textContent=`Huidige koers ${euro(s.price)}. ${buy!=null?'Volgend koopniveau: '+euro(buy)+'. ':''}${sell!=null?'Verkoop laatste aankoop bij '+euro(sell)+'.':''}`;
+    }
+  }
+  const tb=document.getElementById('positions');tb.innerHTML='';
+  const n=s.positions.length;
+  [...s.positions].reverse().forEach((p,i)=>{
+    let value=s.price==null?null:s.price*p.qty, res=value==null?null:value-p.price*p.qty;
+    tb.innerHTML+=`<tr><td>#${n-i}</td><td>${p.date}</td><td>${p.qty}</td><td>${euro(p.price)}</td><td>${euro(value)}</td><td>${euro(p.price*(1+s.sellPct/100))}</td><td class="${res>=0?'good':'bad'}">${euro(res)}</td></tr>`;
+  });
+  if(!n)tb.innerHTML='<tr><td colspan="7" class="small">Geen open aankooptranches.</td></tr>';
+  const lg=document.getElementById('log');lg.innerHTML='';
+  [...s.transactions].reverse().forEach(t=>{
+    lg.innerHTML+=`<tr><td>${t.date}</td><td>${t.type}</td><td>${euro(t.price)}</td><td>${t.qty}</td><td>${euro(t.amount)}</td><td>${t.result==null?'—':euro(t.result)}</td></tr>`;
+  });
+  if(!s.transactions.length)lg.innerHTML='<tr><td colspan="6" class="small">Nog geen transacties.</td></tr>';
+}
+render();loadAuto();
+</script>
+</body>
+</html>
